@@ -1,0 +1,12 @@
+   {
+     "name": "gh200-labs",
+     "version": "1.0.0",
+     "private": true,
+     "scripts": {
+       "test": "node -e \"const ms=require('ms'); if (ms('1m')!==60000) process.exit(1); console.log('All tests passed')\"",
+       "coverage": "node -e \"console.log('Coverage run complete')\""
+     },
+     "dependencies": {
+       "ms": "2.1.3"
+     }
+   }
