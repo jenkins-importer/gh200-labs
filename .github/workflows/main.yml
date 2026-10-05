@@ -16,6 +16,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Inspect runner environment
+        run: |
+          echo "Runner OS:   $RUNNER_OS"
+          echo "Runner Arch: $RUNNER_ARCH"
+          echo "Image:       ${ImageOS:-n/a} ${ImageVersion:-n/a}"
+          echo "Tool cache:  $RUNNER_TOOL_CACHE"
+          echo "Preinstalled tools:"
+          ls "$RUNNER_TOOL_CACHE"
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            grep -E '^(PRETTY_NAME|VERSION_ID)=' /etc/os-release
+          fi
+
       - name: Checkout
         uses: actions/checkout@v7
 
@@ -27,6 +39,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Report npm cache status
+        env:
+          CACHE_HIT: ${{ steps.setup.outputs.cache-hit }}
+        run: |
+          echo "npm cache exact hit: ${CACHE_HIT:-false}"
 
       - name: Capture version to GITHUB_OUTPUT
         id: pkg
