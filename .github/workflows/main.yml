@@ -62,3 +62,39 @@ jobs:
         env:
           REPORT: ${{ steps.summary.outputs.report }}
         run: echo "$REPORT"
+
+      - name: Run unit tests
+        id: tests
+        run: npm test
+
+      - name: Generate test summary
+        if: ${{ !cancelled() }}
+        env:
+          APP_VERSION: ${{ steps.pkg.outputs.version }}
+          BUILD_TS: ${{ steps.pkg.outputs.build_timestamp }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: |
+          {
+            echo "## 📋 Test Report"
+            echo ""
+            echo "| Metric | Value |"
+            echo "| --- | --- |"
+            echo "| Build ID | $BUILD_ID |"
+            echo "| Version | $APP_VERSION |"
+            echo "| Timestamp | $BUILD_TS |"
+            echo "| Unit tests | $TEST_OUTCOME |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate coverage summary
+        if: ${{ !cancelled() }}
+        run: |
+          {
+            echo ""
+            echo "## 📊 Coverage Report (sample values)"
+            echo ""
+            echo "| Coverage Type | Percentage |"
+            echo "| --- | --- |"
+            echo "| Statements | 85% |"
+            echo "| Branches | 78% |"
+            echo "| Functions | 92% |"
+          } >> "$GITHUB_STEP_SUMMARY"
