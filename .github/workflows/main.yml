@@ -14,7 +14,7 @@ env:
 
 jobs:
   build:
-    runs-ons: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -27,3 +27,38 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Capture version to GITHUB_OUTPUT
+        id: pkg
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "build_timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Set environment variable
+        run: echo "BUILD_ID=build-${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Use captured values
+        env:
+          APP_VERSION: ${{ steps.pkg.outputs.version }}
+          BUILD_TS: ${{ steps.pkg.outputs.build_timestamp }}
+        run: |
+          echo "App version: $APP_VERSION"
+          echo "Build ID: $BUILD_ID"
+          echo "Build timestamp: $BUILD_TS"
+
+      - name: Capture multiline output
+        id: summary
+        run: |
+          delimiter="ghadelimiter_$(openssl rand -hex 8)"
+          {
+            echo "report<<${delimiter}"
+            echo "Workflow Status: In Progress"
+            echo "Tests: Pending"
+            echo "Coverage: Pending"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Display multiline output
+        env:
+          REPORT: ${{ steps.summary.outputs.report }}
+        run: echo "$REPORT"
