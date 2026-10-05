@@ -19,11 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - name: Setup build environment
+        id: setup
+        uses: ./.github/actions/setup-build-env
         with:
           node-version: '22'
-          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -98,3 +98,9 @@ jobs:
             echo "| Branches | 78% |"
             echo "| Functions | 92% |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  coverage:
+    needs: build
+    uses: ./.github/workflows/reusable-coverage.yml
+    with:
+      node-version: '22'
