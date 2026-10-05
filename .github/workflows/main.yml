@@ -14,7 +14,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-ons: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
