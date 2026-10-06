@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Inspect runner environment
         run: |
@@ -33,7 +34,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup build environment
         id: setup
@@ -120,6 +121,30 @@ jobs:
             echo "| Branches | 78% |"
             echo "| Functions | 92% |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Request and decode OIDC token
+        run: |
+          set -euo pipefail
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::error::No OIDC endpoint found. Does this job have 'id-token: write'?"
+            exit 1
+          fi
+          RESPONSE=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com")
+          TOKEN=$(echo "$RESPONSE" | jq -r '.value')
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "::error::OIDC response did not contain a token."
+            exit 1
+          fi
+          echo "::add-mask::$TOKEN"
+          echo "Token received (length: ${#TOKEN})"
+          PAYLOAD=$(echo "$TOKEN" | cut -d '.' -f2 | tr '_-' '/+')
+          case $(( ${#PAYLOAD} % 4 )) in
+            2) PAYLOAD="${PAYLOAD}==" ;;
+            3) PAYLOAD="${PAYLOAD}=" ;;
+          esac
+          echo "Token claims:"
+          echo "$PAYLOAD" | base64 -d | jq '{iss, aud, sub, repository, ref, sha, actor, workflow, job_workflow_ref}'
 
   coverage:
     needs: build
