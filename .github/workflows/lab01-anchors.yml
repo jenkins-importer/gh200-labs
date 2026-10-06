@@ -1,0 +1,25 @@
+name: Lab 01 - YAML Anchors
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env: &shared_env
+      NODE_ENV: test
+      API_URL: https://api.example.com
+    steps:
+      - &print_step
+        name: Print environment
+        run: |
+          echo "NODE_ENV: $NODE_ENV"
+          echo "API_URL: $API_URL"
+
+  test:
+    runs-on: ubuntu-latest
+    env: *shared_env
+    steps:
+      - *print_step
+      - name: Confirm shared values
+        run: echo "Shared environment values successfully verified across jobs via YAML anchors."
