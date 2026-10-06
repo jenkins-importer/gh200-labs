@@ -191,3 +191,30 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh attestation verify build-output.tar.gz --repo "$GITHUB_REPOSITORY"
+
+  audit:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: List repository secrets
+        env:
+          GH_TOKEN: ${{ secrets.AUDIT_PAT }}
+        run: |
+          {
+            echo "## 🔐 Repository Secrets"
+            echo ""
+            gh api "repos/${GITHUB_REPOSITORY}/actions/secrets" --paginate \
+              --jq '.secrets[] | "- \(.name) (updated: \(.updated_at))"'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: List repository variables
+        env:
+          GH_TOKEN: ${{ secrets.AUDIT_PAT }}
+        run: |
+          {
+            echo ""
+            echo "## ⚙️ Repository Variables"
+            echo ""
+            gh api "repos/${GITHUB_REPOSITORY}/actions/variables" --paginate \
+              --jq '.variables[] | "- \(.name) (updated: \(.updated_at))"'
+          } >> "$GITHUB_STEP_SUMMARY"
