@@ -1,7 +1,12 @@
 name: Lab 01 - YAML Anchors
 
 on:
-  workflow_dispatch:
+    push:
+    branches: &main_branches
+        - main
+    pull_request:
+        branches: *main_branches
+    workflow_dispatch:
 
 jobs:
   build:
