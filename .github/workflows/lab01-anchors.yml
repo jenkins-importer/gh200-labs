@@ -2,7 +2,7 @@ name: Lab 01 - YAML Anchors
 
 on:
     push:
-    branches: &main_branches
+        branches: &main_branches
         - main
     pull_request:
         branches: *main_branches
