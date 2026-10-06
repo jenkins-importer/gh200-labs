@@ -12,9 +12,13 @@ env:
   NODE_ENV: test
   API_URL: https://api.example.com
 
+permissions: {}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Inspect runner environment
         run: |
@@ -119,6 +123,8 @@ jobs:
 
   coverage:
     needs: build
+    permissions:
+      contents: read
     uses: ./.github/workflows/reusable-coverage.yml
     with:
       node-version: '22'
