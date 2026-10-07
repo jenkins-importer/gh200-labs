@@ -15,7 +15,7 @@ jobs:
         id: greet
         uses: ./.github/actions/lab05-greet
         with:
-          who: 'GH-200'
+          who: 'kk-200'
 
       - name: Display greeting output
         env:
