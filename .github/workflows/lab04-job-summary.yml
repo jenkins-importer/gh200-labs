@@ -1,0 +1,45 @@
+name: Lab 04 - Job Summary
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  reporting-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Primary verification
+        id: check_success
+        run: echo "Service check executed successfully."
+
+      - name: Controlled failure probe
+        id: check_failure
+        continue-on-error: true
+        run: |
+          echo "Simulating failure..."
+          exit 1
+
+      - name: Generate summary report
+        if: ${{ !cancelled() }}
+        env:
+          PASS_OUTCOME: ${{ steps.check_success.outcome }}
+          PASS_CONCLUSION: ${{ steps.check_success.conclusion }}
+          FAIL_OUTCOME: ${{ steps.check_failure.outcome }}
+          FAIL_CONCLUSION: ${{ steps.check_failure.conclusion }}
+        run: |
+          cat << EOF >> "$GITHUB_STEP_SUMMARY"
+          ## 📋 Step Execution Status
+
+          | Step | Outcome | Conclusion |
+          | --- | --- | --- |
+          | Primary Verification | \`$PASS_OUTCOME\` | \`$PASS_CONCLUSION\` |
+          | Failure Probe | \`$FAIL_OUTCOME\` | \`$FAIL_CONCLUSION\` |
+
+          ## 📊 Test Coverage Metrics
+
+          | Metric | Percentage |
+          | --- | --- |
+          | Statements | 85% |
+          | Branches | 78% |
+          | Functions | 92% |
+          EOF
