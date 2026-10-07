@@ -1,0 +1,22 @@
+name: 'Lab 05 Greet'
+description: 'Generates and outputs a greeting message'
+inputs:
+  who:
+    description: 'Target of the greeting'
+    required: false
+    default: 'KodeKloud student'
+outputs:
+  message:
+    description: 'Constructed greeting message'
+    value: ${{ steps.compose.outputs.message }}
+runs:
+  using: 'composite'
+  steps:
+    - id: compose
+      shell: bash
+      env:
+        RECIPIENT: ${{ inputs.who }}
+      run: |
+        GREETING="Hello, ${RECIPIENT}!"
+        echo "message=${GREETING}" >> "$GITHUB_OUTPUT"
+        echo "${GREETING}"

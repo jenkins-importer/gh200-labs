@@ -1,0 +1,27 @@
+name: Lab 05 - Reusable Workflow
+
+on:
+  push:
+  workflow_call:
+    inputs:
+      environment-name:
+        description: 'Environment to evaluate'
+        type: string
+        required: false
+        default: 'staging'
+    outputs:
+      result:
+        description: 'Check result status string'
+        value: ${{ jobs.report.outputs.result }}
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.inspect.outputs.result }}
+    steps:
+      - id: inspect
+        env:
+          ENV_NAME: ${{ inputs.environment-name }}
+        run: |
+          echo "result=checked-${ENV_NAME}" >> "$GITHUB_OUTPUT"
