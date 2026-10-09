@@ -6,12 +6,11 @@ on:
 
 jobs:
     use-reusable:
-        uses: ./.github/workflows/lab05-reusable.yml
-        with:
+    uses: ./.github/workflows/lab05-reusable.yml
+    with:
         node-version: '20'
-        secrets:
+    secrets:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
     test-composite-action:
      runs-on: ubuntu-slim
      steps:
