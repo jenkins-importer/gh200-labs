@@ -1,0 +1,41 @@
+name: Lab 06 - Toolcache and Caching
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cache-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Inspect runner environment and toolcache
+        run: |
+          echo "Runner OS: $RUNNER_OS"
+          echo "Runner Arch: $RUNNER_ARCH"
+          echo "Image OS: $ImageOS"
+          echo "Image Version: $ImageVersion"
+          echo "Tool Cache Path: $RUNNER_TOOL_CACHE"
+          echo "Preinstalled tools:"
+          ls -la "$RUNNER_TOOL_CACHE"
+
+      - name: Cache test directory
+        id: cache-step
+        uses: actions/cache@v4
+        with:
+          path: ~/lab06-cache
+          key: ${{ runner.os }}-lab06-${{ hashFiles('.github/workflows/lab06-toolcache-cache.yml') }}
+
+      - name: Populate cache directory on miss
+        if: steps.cache-step.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/lab06-cache
+          date -u +%Y-%m-%dT%H:%M:%SZ > ~/lab06-cache/timestamp.txt
+
+      - name: Verify cache result
+        env:
+          CACHE_HIT: ${{ steps.cache-step.outputs.cache-hit }}
+        run: |
+          echo "Exact cache hit: ${CACHE_HIT:-false}"
+          echo "Stored timestamp: $(cat ~/lab06-cache/timestamp.txt)"
