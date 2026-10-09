@@ -8,7 +8,9 @@ jobs:
   use-reusable:
     uses: ./.github/workflows/lab05-reusable.yml
     with:
-      environment-name: 'production'
+      node-version: '20'
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   show-result:
     runs-on: ubuntu-latest
