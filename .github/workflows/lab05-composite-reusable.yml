@@ -14,7 +14,6 @@ jobs:
     test-composite-action:
         runs-on: ubuntu-slim
         steps:
-            - uses: actions/checkout@v7
-            - uses: ./.github/actions/lab05-greet/action.yml
+            - uses: ./.github/actions/lab05-greet
               with:
                 environment: 'PRODUCTION'
