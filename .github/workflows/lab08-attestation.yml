@@ -1,6 +1,7 @@
-name: Lab 8 - Artifact Attestation
+name: Lab 08 - Artifact Attestation
 
 on:
+  push:
   workflow_dispatch:
 
 permissions: {}
@@ -17,7 +18,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Create build tarball
-        run: tar -czf build-output.tar.gz .github/workflows/lab10-attestation.yml
+        run: tar -czf build-output.tar.gz .github/workflows/lab08-attestation.yml
 
       - name: Attest build provenance
         id: attest
