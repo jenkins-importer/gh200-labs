@@ -1,133 +1,59 @@
-name: "Lab 12 - Advanced Matrix & Failure Analysis"
+# .github/workflows/matrix-ci.yml
+name: Advanced Matrix CI Workflow
 
 on:
-  workflow_dispatch:
-    inputs:
-      target_failure:
-        description: "Select which matrix variant to intentionally fail"
-        type: choice
-        default: "none"
-        options:
-          - "none"
-          - "windows-node20"
-          - "edge-node24"
-          - "all-node18"
-
-permissions:
-  contents: read
-  actions: read
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # Enables manual triggering from the UI
 
 jobs:
-  # ===========================================================================
-  # JOB 1: Multi-Axis Matrix Execution
-  # ===========================================================================
-  matrix-test:
-    # -------------------------------------------------------------------------
-    # Competency 2: Correlate Job Names to Matrix Axes
-    # Explicitly maps each matrix dimension into the workflow run tree
-    # -------------------------------------------------------------------------
-    name: "Variant [OS: ${{ matrix.os }} | Node: ${{ matrix.node }} | Tier: ${{ matrix.tier || 'standard' }}]"
+  validate-and-test:
+    # 2. Correlating Job Names to Matrix Axes
+    # Explicit mapping creates highly scannable, human-readable labels in the UI dashboard.
+    name: Test
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
 
-    # -------------------------------------------------------------------------
-    # Competency 1: Interpret Matrix Expansions
-    # Math:
-    #   Base Cartesian product : 2 OS (ubuntu, windows) * 3 Nodes (18, 20, 22) = 6 legs
-    #   Exclude               : (windows, node 18)                            = -1 leg
-    #   Include (Augmenting)  : (ubuntu, node 22) -> adds tier: 'primary'     = +0 legs (augments existing)
-    #   Include (Appending)   : (ubuntu, node 24) -> adds new variant         = +1 leg  (creates 6th leg)
-    #   Total Expanded Legs   : 6 - 1 + 1 = 6 Legs
-    # -------------------------------------------------------------------------
     strategy:
-      fail-fast: false # Competency 3: Prevent one failure from cancelling others
-      max-parallel: 4
+      # 1. Interpreting Matrix Expansions
+      # Combines 2 Operating Systems × 3 Node Versions × 2 Databases = 12 total unique jobs.
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node: [18, 20, 22]
-        include:
-          # Case A: Matches existing combination -> AUGMENTS it with an extra variable
-          - os: ubuntu-latest
-            node: 22
-            tier: "primary"
-          # Case B: Introduces non-existent combination -> APPENDS an entirely new leg
-          - os: ubuntu-latest
-            node: 24
-            tier: "edge"
-        exclude:
-          # Case C: Removes matching combination from Cartesian product
-          - os: windows-latest
-            node: 18
+        node-version: [18.x, 20.x, 22.x]
+        database: [postgres, mongodb]
+        
+      # CRITICAL FOR FAILURE ANALYSIS:
+      # Setting fail-fast to false ensures that if one combination (e.g., Windows/Node 18/MongoDB) fails,
+      # the other 11 jobs continue running. This provides the full picture to spot matrix failure patterns.
+      fail-fast: false
 
     steps:
-      # Step 1: Context & Axis Correlation
-      - name: Correlate axes and runner metadata
-        env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
-          JOB_INDEX: ${{ strategy.job-index }}
-          JOB_TOTAL: ${{ strategy.job-total }}
-          AXIS_OS: ${{ matrix.os }}
-          AXIS_NODE: ${{ matrix.node }}
-          AXIS_TIER: ${{ matrix.tier || 'standard' }}
-        run: |
-          echo "=== 🧭 Matrix Axis Correlation ==="
-          echo "Declared Matrix Context: $MATRIX_CONTEXT"
-          echo "Leg Index: $JOB_INDEX of $JOB_TOTAL"
-          echo "-------------------------------------"
-          echo "Axis OS: $AXIS_OS | Actual Runner OS: $RUNNER_OS"
-          echo "Axis Node: $AXIS_NODE"
-          echo "Axis Tier: $AXIS_TIER"
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
 
-      # Step 2: Setup Language Runtime
-      - name: Setup Node.js runtime
+      - name: Setup Node.js Runtime
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node-version }}
 
-      - name: Verify runtime version
+      - name: Install Project Dependencies
+        run: npm ci
+
+      - name: Spin up Test Database
+        # Uses matrix dimensions to pass environmental parameters unique to each run
         run: |
-          echo "Resolved Node Version: $(node --version)"
-          echo "Runner Architecture: $RUNNER_ARCH"
+          echo "Initializing ${{ matrix.database }} cluster on Host OS: ${{ matrix.os }}"
+          npm run db:setup -- --type=${{ matrix.database }}
 
-      # Step 3: Competency 3 - Intentional Failure Injection Across Variants
-      - name: Execute build test and evaluate variant stability
-        env:
-          FAILURE_TARGET: ${{ inputs.target_failure }}
-          CURRENT_OS: ${{ matrix.os }}
-          CURRENT_NODE: ${{ matrix.node }}
-          CURRENT_TIER: ${{ matrix.tier || 'standard' }}
-        run: |
-          echo "Testing variant stability..."
+      - name: Execute Test Suite
+        run: npm run test:ci
 
-          # Variant Failure Condition 1: Windows + Node 20
-          if [ "$FAILURE_TARGET" = "windows-node20" ] && [ "$RUNNER_OS" = "Windows" ] && [ "$CURRENT_NODE" = "20" ]; then
-            echo "::error title=Variant Failure Detected::Simulated failure on [Windows-latest + Node 20]!"
-            exit 1
-          fi
-
-          # Variant Failure Condition 2: Edge Tier (Ubuntu + Node 24)
-          if [ "$FAILURE_TARGET" = "edge-node24" ] && [ "$CURRENT_TIER" = "edge" ]; then
-            echo "::error title=Variant Failure Detected::Simulated failure on Edge tier [Ubuntu + Node 24]!"
-            exit 1
-          fi
-
-          # Variant Failure Condition 3: All Node 18 variants
-          if [ "$FAILURE_TARGET" = "all-node18" ] && [ "$CURRENT_NODE" = "18" ]; then
-            echo "::error title=Variant Failure Detected::Simulated failure across all Node 18 legs!"
-            exit 1
-          fi
-
-          echo "✅ Variant verification passed successfully."
-
-  # ===========================================================================
-  # JOB 2: Matrix Analyzer, Diagnostic Collector & Selective Rerun Generator
-  # ===========================================================================
-  matrix-analyzer:
-    name: "Matrix Diagnostics & Rerun Assistant"
-    runs-on: ubuntu-latest
-    needs: matrix-test
-    if: always() # Must execute even when matrix legs fail
-    steps:
-      - name: Analyze matrix execution and g
+      - name: Upload Logs on Failure
+        # 3. Analyzing Failures Across Variants
+        # Generates uniquely named bug reports so you can tell if a defect is isolated to one environment.
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.os }}-node-${{ matrix.node-version }}-${{ matrix.database }}
+          path: ./logs/
