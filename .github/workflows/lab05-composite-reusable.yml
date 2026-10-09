@@ -14,6 +14,6 @@ jobs:
     test-composite-action:
         runs-on: ubuntu-slim
         steps:
-            - uses: .github/actions/lab05-greet/action.yml
+            - uses: ./.github/actions/lab05-greet/action.yml
               with:
                 environment: 'PRODUCTION'
