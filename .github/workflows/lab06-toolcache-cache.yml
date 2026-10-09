@@ -39,3 +39,11 @@ jobs:
         run: |
           echo "Exact cache hit: ${CACHE_HIT:-false}"
           echo "Stored timestamp: $(cat ~/lab06-cache/timestamp.txt)"
+
+
+
+
+
+
+
+
