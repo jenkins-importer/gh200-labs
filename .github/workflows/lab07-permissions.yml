@@ -1,0 +1,47 @@
+name: Lab 07 - Least-Privilege Token
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  read-only:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Attempt issue write (expected denial)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api --method POST "repos/${GITHUB_REPOSITORY}/issues" \
+            -f title="Unauthorized Issue Probe" \
+            -f body="Write should fail" 2>/dev/null; then
+            echo "Error: Issue creation succeeded unexpectedly!" >&2
+            exit 1
+          else
+            echo "The write was denied, as expected"
+          fi
+
+  with-write:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create and close probe issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ISSUE_NUM=$(gh api --method POST "repos/${GITHUB_REPOSITORY}/issues" \
+            -f title="Lab 07 probe" \
+            -f body="Created to test least-privilege token permissions" \
+            --jq '.number')
+          echo "Created issue #${ISSUE_NUM}"
+
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUM}" \
+            -f state="closed" > /dev/null
+          echo "Closed issue #${ISSUE_NUM}"
