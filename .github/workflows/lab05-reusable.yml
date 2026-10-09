@@ -1,26 +1,18 @@
-name: Lab 05 - Reusable Workflow
-
+name: Reusable CI
 on:
-  push:
   workflow_call:
     inputs:
-      environment-name:
+      node-version:
+        required: true
         type: string
-        required: false
-        default: 'staging'
-    outputs:
-      result:
-        description: 'Check result status string'
-        value: ${{ jobs.report.outputs.result }}
-
+    secrets:
+      NPM_TOKEN:
+        required: true
 jobs:
-  report:
+  test:
     runs-on: ubuntu-latest
-    outputs:
-      result: ${{ steps.inspect.outputs.result }}
     steps:
-      - id: inspect
-        env:
-          ENV_NAME: ${{ inputs.environment-name }}
-        run: |
-          echo "result=checked-${ENV_NAME}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}

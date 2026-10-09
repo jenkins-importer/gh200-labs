@@ -5,23 +5,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  use-composite:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Call composite greeting action
-        id: greet
-        uses: ./.github/actions/lab05-greet
-        with:
-          who: 'kk-200'
-
-      - name: Display greeting output
-        env:
-          OUTPUT_MSG: ${{ steps.greet.outputs.message }}
-        run: echo "$OUTPUT_MSG"
-
   use-reusable:
     uses: ./.github/workflows/lab05-reusable.yml
     with:
